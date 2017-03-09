@@ -1,36 +1,49 @@
 <?php
+	for ($i=1; $i < 1030; $i++) 
+	{ 
+		$url = 'http://www.moviebuff.com/directory/people?page='.$i;
+		echo $url;
+		fetch($url);
+	}
+	function fetch($url)
+	{
 	$dom = new DOMDocument();
-	$homepage = file_get_contents('http://www.moviebuff.com/directory/people');
+	$homepage = file_get_contents($url);
 	libxml_use_internal_errors(true);
 	$dom->loadHTML($homepage);
 	libxml_clear_errors();
-	$classname="row";
+	$classname="person-entry";
+	$classname1="name";
 	$finder = new DomXPath($dom);
 	$spaner = $finder->query("//*[contains(@class, '$classname')]");
-	#Added Credentials
+	$spaner1 = $finder->query("//*[contains(@class, '$classname1')]");
 	$Credentials = "mysql:host=localhost;dbname=moviebuff";
-	#Added Exceptions
 	$Options = array(PDO::ATTR_ERRMODE=> PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC);
-	#Establishing Connection
-	$Connection = new PDO($Credentials,'root','', $Options);
-	#Declaring Table Name
-	$TableName = 'sysaxiom';
-    #Preparing Statement
+	$Connection = new PDO($Credentials,'allau','password', $Options);
     $Trigger = $Connection->prepare("INSERT INTO people (name, role, created_at, updated_at) VALUES (?, ?, ? , ?)");
-    #Binding the Parameter
 	$Trigger->bindParam(1, $name);
 	$Trigger->bindParam(2, $role);
-	$name = 'Sulthan';
-	$role = 'sa@sysaxiom.com';
-	foreach($spaner as $element ){
-		print_r($element);
-		echo $element->textContent;
-		echo $element->textContent."<br>";
-		//$Trigger->execute();
- 	//echo $element->textContent."<br>";
+	$Trigger->bindParam(3, $created_at);
+	$Trigger->bindParam(4, $updated_at);
+	for ($i=0; $i < 200; $i++) { 
+		$node = $spaner->item($i);
+		$node1 = $spaner1->item($i);
+		if($node1->textContent)
+		{
+		$len =  strlen($node1->textContent);
+		$roleStr = substr($node->textContent, $len+1, strlen($node->textContent));
+		$name = $node1->textContent;
+		$role = $roleStr;
+		$created_at = date("Y-m-d H:i:s");
+		$updated_at = date("Y-m-d H:i:s");
+		$Trigger->execute();	
+		
 		}
-	#Executing the Trigger
-	
-	#Disconnecting the DB Connection
+		else
+		{
+			echo "Skipped".$url;
+		}
+	}
 	$Connection = null;
+	}
 ?>
